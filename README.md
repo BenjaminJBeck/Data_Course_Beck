@@ -1,1 +1,2 @@
-# Data_Course_Beck
+# Data_Course_BeckThis README file contains information about my uploaded assignments
+This README file contains information about my uploaded assignments
