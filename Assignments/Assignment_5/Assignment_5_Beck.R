@@ -5,6 +5,7 @@ library(gganimate)
 library(wesanderson)
 library(GGally)
 
+ugplyplot<-
 ggplot(penguins, aes(x = flipper_length_mm, y = body_mass_g, color = species, shape = island)) +
   geom_point(size = 10, alpha = 0.8) + 
   geom_smooth(method = "lm", se = FALSE, color = "yellow", linetype = "dotted", size = 3) + 
@@ -24,3 +25,5 @@ ggplot(penguins, aes(x = flipper_length_mm, y = body_mass_g, color = species, sh
     x = "Flipper Length (mm)",
     y = "Body Mass (g)"
   )
+
+ggsave("UglyPlot.png", plot = ugplyplot, width = 6, height = 4, dpi = 300)
