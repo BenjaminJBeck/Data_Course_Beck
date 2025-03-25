@@ -6,7 +6,11 @@ library(wesanderson)
 library(GGally)
 library(skimr)
 library(janitor)
-
+install.packages("easystats")
+library(easystats)
+library(MASS)
+install.packages("caret")
+library(caret)
 
 p<-
 penguins %>%
@@ -207,4 +211,80 @@ dat %>%
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))+
   facet_wrap(~county)
 
+#You can have a script saved in another R file and use it in anothe
+mod1<-
+iris %>% 
+  glm(data=., 
+      formula=Sepal.Length ~ Species, etastart = )
+mod1 %>% summary()
+iris %>% 
+  group_by(Species) %>% 
+  summarise(sl = mean(Sepal.Length))
 
+mod2<-
+  iris %>% 
+  glm(data=., 
+      formula=Sepal.Length ~ Species + Sepal.Width)
+summary(mod2)
+
+ggplot(iris, aes(x=Sepal.Width,y=Sepal.Length, color = Species)) +
+  geom_point() +
+  geom_smooth(method = "glm")
+
+mod3<-
+  iris %>% 
+  glm(data=., 
+      formula=Sepal.Length ~ Species * Sepal.Width)
+summary(mod3)
+
+compare_models(mod1,mod2,mod3) %>% plot()
+compare_performance(mod1,mod2,mod3) %>% plot()
+
+#A T-test is a linear regression model
+
+library(palmerpenguins)
+view(penguins)
+#Make a 3 models predicting body_mass_g
+penguins %>% glimpse
+mod1<- glm(data = penguins, formula = body_mass_g ~ bill_depth_mm, family = gaussian())
+mod2<- glm(data = penguins, formula = body_mass_g ~ bill_depth_mm + species, family = gaussian())
+mod3<- glm(data = penguins, formula = body_mass_g ~ bill_depth_mm*species, family = gaussian())
+mod4<- glm(data = penguins, formula = body_mass_g ~ sex*species, family = gaussian())
+compare_models(mod1,mod2,mod3) %>% plot()
+compare_performance(mod1,mod2,mod3,mod4) %>%  plot()
+
+
+step<-stepAIC(object=mod4)
+mod5<-glm(data=penguins, formula = step$formula)
+#Simpler the formula the more versitile it can be
+#StepAIC is great for simplifying information
+new_penguin <-
+  data.frame(species="Adelie", 
+             island = "Torgersen",
+             bill_length_mm = 4000,
+             bill_depth_mm = 20,
+             flipper_length_mm = 500,
+             sex = "female",
+             year = 2007)
+predict(object = mod5, newdata=new_penguin)
+predict(mod5,penguins)
+penguins$preds<-predict(mod5,penguins)
+ggplot(penguins, aes(x=body_mass_g, y=preds))+
+  geom_point()+
+  geom_smooth(method='lm')
+
+dat<-penguins[complete.cases(penguins),]
+train_rows<-caret::createDataPartition(y= dat$body_mass_g,p=.5)
+train<-dat[train_rows$Resample1,]
+test<-dat[-train_rows$Resample1,]
+
+mod_xval<-glm(data=train, formula = step$formula)
+xval_preds<-predict(mod_xval,newdata=test)
+test %>% mutate(xval_preds = xval_preds) %>% 
+ggplot(aes(x=body_mass_g, y=xval_preds)) +
+  geom_point()+
+  geom_smooth(method='lm')
+model_performance(mod_xval)
+model_performance(mod5)
+check_model(mod_xval)
+report(mod_xval)
