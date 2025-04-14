@@ -1,0 +1,16 @@
+1. Are any of your predicted response values from your best model scientifically meaningless? Explain.
+
+Here, all predicted values appear to be within the same range as the real data, so they seem valid, but this must always be double-checked.
+
+2. In your plots, did you find any non-linear relationships? Do a bit of research online and give a link to at least one resource explaining how to deal with modeling non-linear relationships in R.
+
+Yes, in the plot of Light vs GrowthRate, the relationship appears non-linear — especially where GrowthRate increases rapidly between 10 and 20 units of Light. This suggests a possible exponential or quadratic trend.
+
+Resource on dealing with non-linear relationships in R:  
+https://www.datacamp.com/tutorial/introduction-to-non-linear-model-and-insights-using-r
+
+3. Write the code you would use to model the data found in “/Data/non_linear_relationship.csv” with a linear model (there are a few ways of doing this)
+
+Simple linear model
+data <- read.csv("/Data/non_linear_relationship.csv")
+model1 <- lm(y ~ x, data = data)
