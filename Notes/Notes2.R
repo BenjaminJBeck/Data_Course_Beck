@@ -6,10 +6,8 @@ library(wesanderson)
 library(GGally)
 library(skimr)
 library(janitor)
-install.packages("easystats")
 library(easystats)
 library(MASS)
-install.packages("caret")
 library(caret)
 
 p<-
@@ -288,3 +286,51 @@ model_performance(mod_xval)
 model_performance(mod5)
 check_model(mod_xval)
 report(mod_xval)
+
+#3/25/25
+dat<-
+  penguins %>% 
+  dplyr::filter(!is.na(sex)) %>% 
+  mutate(male = sex == "male")
+
+names(dat)
+mod1<-glm(data = dat %>% 
+          dplyr::select(-sex),
+          formula = male ~ .,
+          family = 'binomial')
+
+summary(mod1)
+report(mod1)
+
+dat<-
+dat %>% 
+  mutate(pred = predict(mod1,dat,type = "response"))
+
+dat %>% 
+  ggplot(aes(x = body_mass_g, y = pred, color = sex)) +
+  geom_point()
+
+dat2<-
+dat %>% 
+  mutate(error = pred > .5) %>% view() %>% 
+  mutate(success = male == error) %>% view()
+
+dat2$success %>% summary
+
+x<-read.csv("./Data/Gradschool_Admissions.csv")
+mod1<-glm(data = x, formula = admit ~ (gre+gpa) * rank, family = 'binomial')
+
+x %>% 
+  mutate(pred = predict(mod1, x, type = 'response')) %>% 
+  ggplot(aes(x=gpa, y=pred, color = factor(rank)))+
+  geom_point()+
+  geom_smooth()
+
+x %>% 
+  mutate(pred = predict(mod1, x, type = 'response')) %>% 
+  ggplot(aes(x=gre, y=pred, color = factor(rank)))+
+  geom_point()+
+  geom_smooth()
+
+report(mod1)
+
