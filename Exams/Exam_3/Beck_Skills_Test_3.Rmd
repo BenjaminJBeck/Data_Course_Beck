@@ -1,0 +1,112 @@
+---
+title: "Exam 3"
+author: "Ben Beck"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+dat<-read.csv("FacultySalaries_1995.csv")
+View(dat)
+head(dat)
+library(dplyr)
+library(tidyr)
+library(tidyverse)
+dat2<-read.csv("Juniper_Oils.csv")
+head(dat2)
+library(stringr)
+library(ggplot2)
+library(broom)
+```
+## Tidy Faculty_Salaries_1995.csv
+
+```{r}
+tidy_dat <- dat %>%
+  pivot_longer(
+    cols = c(AvgFullProfSalary, AvgAssocProfSalary, AvgAssistProfSalary,
+             AvgFullProfComp, AvgAssocProfComp, AvgAssistProfComp,
+             NumFullProfs, NumAssocProfs, NumAssistProfs),
+    names_to = "Metric",
+    values_to = "Value"
+  ) %>%
+  mutate(
+    Rank = case_when(
+      str_detect(Metric, "FullProf") ~ "Full",
+      str_detect(Metric, "AssocProf") ~ "Associate",
+      str_detect(Metric, "AssistProf") ~ "Assistant"
+    ),
+    Variable = case_when(
+      str_detect(Metric, "Salary") ~ "Salary",
+      str_detect(Metric, "Comp") ~ "Compensation",
+      str_detect(Metric, "Num") ~ "Count"
+    )
+  ) %>%
+  select(-Metric) %>%
+  pivot_wider(
+    names_from = Variable,
+    values_from = Value
+  ) %>%
+  select(FedID, UnivName, State, Tier, Rank, Salary, Compensation, Count)
+
+```
+
+## Create Anova Table
+```{r cars}
+tidy_dat$Rank <- as.factor(tidy_dat$Rank)
+tidy_dat$State <- as.factor(tidy_dat$State)
+tidy_dat$Tier <- as.factor(tidy_dat$Tier)
+
+anova_model <- aov(Salary ~ State + Tier + Rank, data = tidy_dat)
+
+summary(anova_model)
+```
+## Tidy Juniper_Oils.csv
+```{r}
+dat_clean <- dat2 %>%
+  rename_with(~ str_replace_all(., "\\.", "-"))
+
+# Step 2: List of chemical columns
+chemicals <- c("alpha-pinene","para-cymene","alpha-terpineol","cedr-9-ene","alpha-cedrene",
+               "beta-cedrene","cis-thujopsene","alpha-himachalene","beta-chamigrene","cuparene",
+               "compound-1","alpha-chamigrene","widdrol","cedrol","beta-acorenol","alpha-acorenol",
+               "gamma-eudesmol","beta-eudesmol","alpha-eudesmol","cedr-8-en-13-ol",
+               "cedr-8-en-15-ol","compound-2","thujopsenal")
+
+# Step 3: Pivot longer to tidy format
+dat_tidy <- dat_clean %>%
+  select(SampleID, YearsSinceBurn, all_of(chemicals)) %>%
+  pivot_longer(cols = all_of(chemicals),
+               names_to = "Compound",
+               values_to = "Concentration")
+```
+## Create a Graph
+```{r}
+ggplot(dat_tidy, aes(x = YearsSinceBurn, y = Concentration)) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(se = TRUE, color = "blue", linewidth = 0.7, fill = "lightblue") +
+  facet_wrap(~ Compound, scales = "free_y") +
+  labs(x = "Years Since Burn",
+       y = "Mass-Spec Concentration",
+       title = "Chemical Concentration vs. Time Since Burn") +
+  theme_minimal()
+```
+## Use GLM model
+```{r}
+# Run GLMs for each chemical
+glm_results <- dat_tidy %>%
+  group_by(Compound) %>%
+  do({
+    model <- glm(Concentration ~ YearsSinceBurn, data = ., family = gaussian())
+    tidy(model)
+  })
+
+# Filter for significant results
+significant_chemicals <- glm_results %>%
+  filter(p.value < 0.05) %>%
+  select(term, estimate, std.error, statistic, p.value)
+
+# View the results
+significant_chemicals
+```
+
