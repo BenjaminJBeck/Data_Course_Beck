@@ -1,0 +1,82 @@
+---
+title: "Assignment 9"
+author: "Ben Beck"
+date: "`r Sys.Date()`"
+output: html_document
+---
+## Set Up
+```{r}
+setwd("C:/Users/beckb/Desktop/Data_Course_Beck/Data")
+dat<-read.csv("GradSchool_Admissions.csv")
+head(dat)
+library(tidyverse)
+library(ggplot2)
+```
+## Summary Statistic
+```{r}
+summary(dat)
+```
+## Visualizations
+```{r}
+# Histograms
+ggplot(dat, aes(x = gre)) + geom_histogram(bins = 30, fill = 'blue', color = 'black') + 
+  ggtitle('Distribution of GRE Scores')
+
+ggplot(dat, aes(x = gpa)) + geom_histogram(bins = 30, fill = 'green', color = 'black') + 
+  ggtitle('Distribution of GPA')
+
+# Boxplots for rank and admit
+ggplot(dat, aes(x = factor(rank), y = gpa)) + geom_boxplot() + 
+  ggtitle('GPA by Rank of Undergraduate Institution')
+
+ggplot(dat, aes(x = factor(admit), y = gre)) + geom_boxplot() + 
+  ggtitle('GRE Scores by Admission Status')
+```
+## Correlation Predictions
+```{r}
+# Correlation matrix for predictors
+cor(dat[, c("gre", "gpa", "rank")])
+```
+## Logistic Regression
+```{r}
+# Fit a logistic regression model
+model <- glm(admit ~ gre + gpa + factor(rank), data = dat, family = binomial)
+summary(model)
+```
+## Model Diagnostics
+```{r}
+# Predicted probabilities
+pred_probs <- predict(model, type = "response")
+
+# Histogram of predicted probabilities
+ggplot(data.frame(pred_probs), aes(x = pred_probs)) +
+  geom_histogram(bins = 30, fill = "purple", color = "black") +
+  ggtitle("Histogram of Predicted Probabilities")
+
+# Create predicted class (threshold = 0.5)
+pred_class <- ifelse(pred_probs > 0.5, 1, 0)
+
+# Confusion matrix
+table(Predicted = pred_class, Actual = dat$admit)
+```
+## Model Evaluation
+```{r}
+# Evaluate model using confusion matrix
+pred_class <- ifelse(pred_probs > 0.5, 1, 0)
+table(pred_class, dat$admit)
+
+# Accuracy, Precision, Recall
+accuracy <- mean(pred_class == dat$admit)
+precision <- sum(pred_class == 1 & dat$admit == 1) / sum(pred_class == 1)
+recall <- sum(pred_class == 1 & dat$admit == 1) / sum(dat$admit == 1)
+
+accuracy
+precision
+recall
+```
+## Conclusion
+```{r}
+##This analysis explores the factors that influence grad-school admissions, using logistic regressions and models. The results show that GRE scores, GPA, and the rank of the undergraduate institution all play roles in admission outcomes (who gets admitted and who doesn't). Higher GPA and GRE scores are associated with a greater chance of getting in, as well as those from higher-ranked institutions. These models provide a reasonable fit and offers insights into what factors have the strongest influence on admissions. 
+```
+
+
